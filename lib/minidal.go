@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"unicode"
 )
 
 type Driver string
@@ -189,30 +190,31 @@ func __delete(table string, glue string, where Object) (string, []any, error) {
 }
 
 func SetField(obj interface{}, name string, value interface{}) error {
+
 	structValue := reflect.ValueOf(obj).Elem()
-	structFieldValue := structValue.FieldByName(name)
+
+	r := []rune(name)
+	r[0] = unicode.ToUpper(r[0])
+	s := string(r)
+
+	structFieldValue := structValue.FieldByName(s)
 
 	if !structFieldValue.IsValid() {
 		return fmt.Errorf("No such field: %s in obj", name)
 	}
 
-	//srcFieldValue := structFieldValue.Addr().Pointer()
-	//valValue := reflect.ValueOf(value)
-
-	//fmt.Printf("%v", valFieldValue)
-	//valFieldValue := valValue.FieldByName(name)
-	//valFieldValue.Elem().Set(structFieldValue.Convert(valFieldValue.Type()))
-	return nil
-
-}
-
-func (m Model) Fill(o Object, s *interface{}) error {
-	for k, v := range o {
-		err := SetField(s, k, v)
-		if err != nil {
-			return err
-		}
+	if !structFieldValue.CanSet() {
+		return fmt.Errorf("Cannot set %s field value", name)
 	}
+
+	val := reflect.ValueOf(value)
+	if fmt.Sprintf("%v", reflect.TypeOf(value)) == "[]uint8" {
+		val := string(val.Interface().([]byte))
+		structFieldValue.Set(reflect.ValueOf(val))
+	} else {
+		structFieldValue.Set(val)
+	}
+
 	return nil
 }
 
@@ -228,7 +230,17 @@ type IModel interface {
 type Model struct {
 	tablename string
 	DAL       DAL
-	Type      *interface{}
+	//T         T
+}
+
+func Fill(s interface{}, o Object) error {
+	for k, v := range o {
+		err := SetField(s, k, v)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (m Model) Insert(data Object) (int64, error) {
@@ -285,7 +297,7 @@ func (m Model) InsertBulk(data ...Object) (Object, error) {
 
 	res, err := m.DAL.Tx(ctx, cs)
 
-	return Object(res.(Object)), err
+	return res.(Object), err
 
 }
 

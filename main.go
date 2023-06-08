@@ -13,19 +13,13 @@ import (
 )
 
 type Demo struct {
-	id      int64  `json:"intValue"`
-	message string `json:"stringValue"`
-	enabled int    `json:"intValue"`
+	Id      int64
+	Message string
+	Enabled int64
 }
 
-func (d *Demo) New(o minidal.Object) (*Demo, error) {
-	for k, v := range o {
-		err := minidal.SetField(d, k, v)
-		if err != nil {
-			return d, err
-		}
-	}
-	return d, nil
+func (d *Demo) Fill(o map[string]interface{}) error {
+	return minidal.Fill(d, o)
 }
 
 func main() {
@@ -75,7 +69,7 @@ func main() {
 		panic(err)
 	}
 
-	Model := db.Model(modelName, Demo{})
+	Model := db.Model(modelName, &Demo{})
 
 	id, err := Model.Insert(minidal.Object{
 		"message": modelName + " inserted!",
@@ -113,10 +107,9 @@ func main() {
 		"id": id,
 	})
 
-	//d := &Demo{}
-	//d, err = d.New(model)
-
-	//fmt.Printf("Custom Model: %+v\n", d)
+	d := &Demo{}
+	err = d.Fill(model)
+	fmt.Printf("Custom Model: %+v\n", d)
 
 	if err != nil {
 		panic(err)
