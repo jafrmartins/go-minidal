@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"reflect"
 	"strings"
 )
 
@@ -187,6 +188,34 @@ func __delete(table string, glue string, where Object) (string, []any, error) {
 
 }
 
+func SetField(obj interface{}, name string, value interface{}) error {
+	structValue := reflect.ValueOf(obj).Elem()
+	structFieldValue := structValue.FieldByName(name)
+
+	if !structFieldValue.IsValid() {
+		return fmt.Errorf("No such field: %s in obj", name)
+	}
+
+	//srcFieldValue := structFieldValue.Addr().Pointer()
+	//valValue := reflect.ValueOf(value)
+
+	//fmt.Printf("%v", valFieldValue)
+	//valFieldValue := valValue.FieldByName(name)
+	//valFieldValue.Elem().Set(structFieldValue.Convert(valFieldValue.Type()))
+	return nil
+
+}
+
+func (m Model) Fill(o Object, s *interface{}) error {
+	for k, v := range o {
+		err := SetField(s, k, v)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 type IModel interface {
 	Insert(data Object) (int, error)
 	InsertBulk(data ...Object) ([]int, error)
@@ -199,6 +228,7 @@ type IModel interface {
 type Model struct {
 	tablename string
 	DAL       DAL
+	Type      *interface{}
 }
 
 func (m Model) Insert(data Object) (int64, error) {
@@ -365,10 +395,11 @@ type DAL struct {
 	DB     *sql.DB
 }
 
-func (dal DAL) Model(tablename string) Model {
+func (dal DAL) Model(tablename string, t any) Model {
 	return Model{
 		tablename: tablename,
 		DAL:       dal,
+		//Type:      t,
 	}
 }
 

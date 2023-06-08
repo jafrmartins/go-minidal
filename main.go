@@ -8,13 +8,32 @@ import (
 
 	minidal "github.com/jafrmartins/go-minidal/lib"
 
-	_ "github.com/mattn/go-sqlite3"
+	//_ "github.com/mattn/go-sqlite3"
+	_ "github.com/go-sql-driver/mysql"
 )
+
+type Demo struct {
+	id      int64  `json:"intValue"`
+	message string `json:"stringValue"`
+	enabled int    `json:"intValue"`
+}
+
+func (d *Demo) New(o minidal.Object) (*Demo, error) {
+	for k, v := range o {
+		err := minidal.SetField(d, k, v)
+		if err != nil {
+			return d, err
+		}
+	}
+	return d, nil
+}
 
 func main() {
 
-	var dialect = minidal.SQLite
-	var connectionString = "./sqlite.db"
+	//var dialect = minidal.SQLite
+	//var connectionString = "./sqlite.db"
+	var dialect = minidal.MySQL
+	var connectionString = "root:password@tcp(localhost:3306)/demo"
 	var modelName = "demo"
 
 	os.Remove(connectionString)
@@ -28,18 +47,35 @@ func main() {
 		panic(errors.New("Could not connect to database"))
 	}
 
-	_, err = db.Exec(`
+	/*_, err = db.Exec(`
 	CREATE TABLE IF NOT EXISTS demo (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        message TEXT NOT NULL,
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		message TEXT NOT NULL,
 		enabled INTEGER DEFAULT 1 NOT NULL
-    );`)
+	);`)
+	*/
+
+	_, err = db.Exec(`
+	DROP TABLE IF EXISTS demo;
+	`)
 
 	if err != nil {
 		panic(err)
 	}
 
-	Model := db.Model(modelName)
+	_, err = db.Exec(`
+	CREATE TABLE demo (
+		id int NOT NULL AUTO_INCREMENT,
+		message varchar(255) NOT NULL,
+		enabled int NOT NULL DEFAULT 1,
+		PRIMARY KEY (id)
+	);`)
+
+	if err != nil {
+		panic(err)
+	}
+
+	Model := db.Model(modelName, Demo{})
 
 	id, err := Model.Insert(minidal.Object{
 		"message": modelName + " inserted!",
@@ -59,7 +95,7 @@ func main() {
 		panic(err)
 	}
 
-	println("message: " + model["message"].(string))
+	println("message: " + string(model["message"].([]byte)))
 
 	rows, err := Model.Update(minidal.Object{
 		"id": id,
@@ -77,17 +113,22 @@ func main() {
 		"id": id,
 	})
 
+	//d := &Demo{}
+	//d, err = d.New(model)
+
+	//fmt.Printf("Custom Model: %+v\n", d)
+
 	if err != nil {
 		panic(err)
 	}
 
-	println("message: " + model["message"].(string))
+	println("message: " + string(model["message"].([]byte)))
 
 	rs, err := db.Query(`
 	SELECT message FROM demo WHERE id = ?
 	`, []any{1})
 
-	println("message: " + rs[0]["message"].(string))
+	println("message: " + string(rs[0]["message"].([]byte)))
 
 	rows, err = Model.Delete(minidal.Object{
 		"id": id,

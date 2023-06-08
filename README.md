@@ -19,7 +19,8 @@ import (
 
 	minidal "github.com/jafrmartins/go-minidal/lib"
 
-	_ "github.com/mattn/go-sqlite3"
+	//_ "github.com/mattn/go-sqlite3"
+    _ "github.com/mattn/go-sqlite3"
 )
 
 func main() {
@@ -39,12 +40,21 @@ func main() {
 		panic(errors.New("Could not connect to database"))
 	}
 
-	_, err = db.Exec(`
+	/*_, err = db.Exec(`
 	CREATE TABLE IF NOT EXISTS demo (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         message TEXT NOT NULL,
 		enabled INTEGER DEFAULT 1 NOT NULL
-    );`)
+    );`)*/
+
+    _, err = db.Exec(`
+    DROP TABLE IF EXISTS demo;
+    CREATE TABLE demo (
+        id          INT AUTO_INCREMENT NOT NULL,
+        message     VARCHAR(128) NOT NULL,
+        enabled     INT NOT NULL DEFAULT 1
+        PRIMARY KEY (id)
+    )`);
 
 	if err != nil {
 		panic(err)
