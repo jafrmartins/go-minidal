@@ -1,4 +1,4 @@
-module jafrmartins/minidal
+module github.com/jafrmartins/go-minidal
 
 go 1.18
 
