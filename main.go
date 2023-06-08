@@ -6,7 +6,7 @@ import (
 	"os"
 	"strconv"
 
-	minidal "jafrmartins/minidal/lib"
+	minidal "github.com/jafrmartins/go-minidal/lib"
 
 	_ "github.com/mattn/go-sqlite3"
 )
