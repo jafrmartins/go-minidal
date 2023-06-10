@@ -132,8 +132,15 @@ func main() {
 		"message": tablename + " also bulk inserted!",
 	})
 
+	if err != nil {
+		panic(err)
+	}
+
 	fmt.Printf("BulkInsert: %v\n", result)
+
 	id = result["LastInsertId"].(int64)
+
+	fmt.Printf("LastInsertId: %s\n", strconv.Itoa(int(id)))
 
 	rows, err = DemoModel.Update(minidal.Object{
 		"id": result["LastInsertId"].(int64),
@@ -141,13 +148,23 @@ func main() {
 		"enabled": 0,
 	})
 
+	fmt.Printf("AffectedRows: %s\n", strconv.Itoa(int(rows)))
+
 	if err != nil {
 		panic(err)
 	}
 
-	models, err := DemoModel.Find(minidal.Object{
-		"enabled": 1,
-		"id":      3,
+	models, err := DemoModel.Find()
+
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("Find Query: %+v\n", models)
+
+	models, err = DemoModel.Find(minidal.Object{
+		"enabled": 0,
+		"id":      2,
 	}, minidal.Object{"id": minidal.DESC}, minidal.OR)
 
 	if err != nil {

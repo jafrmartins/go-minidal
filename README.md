@@ -183,6 +183,21 @@ func main() {
 
 	fmt.Printf("selected id 2: %s\n", strconv.Itoa(int(model.(Demo).Id)))
 
+	models, err := DemoModel.Find(minidal.Object{
+	}, minidal.Object{"id": minidal.DESC}, minidal.OR)
+
+	if err != nil {
+		panic(err)
+	}
+
+	models, err = DemoModel.Deserialize(rs...)
+
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("Custom Model: %+v\n", models)
+
 }
 
 ```

@@ -175,7 +175,7 @@ func (m Model) Find(args ...any) (interface{}, error) {
 		w = args[0].(Object)
 		if len(args) >= 2 {
 			ob = args[1].(Object)
-			if len(args) >= 3 && args[2] == true {
+			if len(args) >= 3 && args[2] == OR {
 				glue = OR
 			}
 		}
@@ -252,7 +252,7 @@ func (m *Model) Deserialize(os ...Object) (any, error) {
 
 	}
 
-	if i > 0 {
+	if i == 1 {
 		return out[0], nil
 	}
 
