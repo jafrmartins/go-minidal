@@ -1,0 +1,1 @@
+package minidal_test

@@ -12,58 +12,77 @@ $: go get -u github.com/jafrmartins/go-minidal
 package main
 
 import (
-	"errors"
 	"fmt"
-	"os"
 	"strconv"
 
 	minidal "github.com/jafrmartins/go-minidal/lib"
 
 	//_ "github.com/mattn/go-sqlite3"
-    _ "github.com/mattn/go-sqlite3"
+	_ "github.com/go-sql-driver/mysql"
 )
+
+type Demo struct {
+	Id      int64
+	Message string
+	Enabled int64
+}
 
 func main() {
 
-	var dialect = minidal.SQLite
-	var connectionString = "./sqlite.db"
-	var modelName = "demo"
+	var tablename = "demo"
 
-	os.Remove(connectionString)
+	/*
 
-	fmt.Println("GODAL Example")
+		var dialect = minidal.SQLite
+		var connectionString minidal.DataSource = "sqlite.db"
 
-	db, err := minidal.NewDAL(dialect, minidal.DataSourceName(connectionString)).Connect()
-	defer db.DB.Close()
+		os.Remove(string(connectionString))
 
-	if err != nil {
-		panic(errors.New("Could not connect to database"))
-	}
+		_, err = db.Exec(fmt.Sprintf(`
+		CREATE TABLE IF NOT EXISTS %s (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			message TEXT NOT NULL,
+			enabled INTEGER DEFAULT 1 NOT NULL
+		);`, tablename))
 
-	/*_, err = db.Exec(`
-	CREATE TABLE IF NOT EXISTS demo (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        message TEXT NOT NULL,
-		enabled INTEGER DEFAULT 1 NOT NULL
-    );`)*/
+	*/
 
-    _, err = db.Exec(`
-    DROP TABLE IF EXISTS demo;
-    CREATE TABLE demo (
-        id          INT AUTO_INCREMENT NOT NULL,
-        message     VARCHAR(128) NOT NULL,
-        enabled     INT NOT NULL DEFAULT 1
-        PRIMARY KEY (id)
-    )`);
+	var dialect = minidal.MySQL
+	var connectionString minidal.DataSource = "root:password@tcp(localhost:3306)/demo"
+
+	db, err := minidal.NewDB(dialect, connectionString).Connect()
+	defer db.Close()
 
 	if err != nil {
 		panic(err)
 	}
 
-	Model := db.Model(modelName)
+	_, err = db.Exec(fmt.Sprintf(`
+	DROP TABLE IF EXISTS %s;
+	`, tablename))
 
-	id, err := Model.Insert(minidal.Object{
-		"message": modelName + " inserted!",
+	if err != nil {
+		panic(err)
+	}
+
+	_, err = db.Exec(fmt.Sprintf(`
+	CREATE TABLE %s (
+		id int NOT NULL AUTO_INCREMENT,
+		message varchar(255) NOT NULL,
+		enabled int NOT NULL DEFAULT 1,
+		PRIMARY KEY (id)
+	);`, tablename))
+
+	if err != nil {
+		panic(err)
+	}
+
+	//DemoModel := db.Model(tablename)
+	DemoModel := db.Model("demo", &Demo{})
+	//DemoModel := db.Model(&Demo{})
+
+	id, err := DemoModel.Insert(minidal.Object{
+		"message": tablename + " inserted!",
 	})
 
 	if err != nil {
@@ -72,7 +91,7 @@ func main() {
 
 	println("Insert InsertID:" + strconv.Itoa(int(id)))
 
-	model, err := Model.First(minidal.Object{
+	model, err := DemoModel.First(minidal.Object{
 		"id": id,
 	})
 
@@ -80,12 +99,14 @@ func main() {
 		panic(err)
 	}
 
-	println("message: " + model["message"].(string))
+	fmt.Printf("Custom Model: %+v\n", model)
 
-	rows, err := Model.Update(minidal.Object{
+	//println("message: " + string(model["message"].(string)))
+
+	rows, err := DemoModel.Update(minidal.Object{
 		"id": id,
 	}, minidal.Object{
-		"message": modelName + " updated!",
+		"message": tablename + " updated!",
 	})
 
 	if err != nil {
@@ -94,23 +115,19 @@ func main() {
 
 	println("Update AffectedRows:" + strconv.Itoa(int(rows)))
 
-	model, err = Model.First(minidal.Object{
+	model, err = DemoModel.First(minidal.Object{
 		"id": id,
 	})
+
+	fmt.Printf("Custom Model Message:%s\n", model.(Demo).Message)
 
 	if err != nil {
 		panic(err)
 	}
 
-	println("message: " + model["message"].(string))
+	println("message: " + string(model.(Demo).Message))
 
-	rs, err := db.Query(`
-	SELECT message FROM demo WHERE id = ?
-	`, []any{1})
-
-	println("message: " + rs[0]["message"].(string))
-
-	rows, err = Model.Delete(minidal.Object{
+	rows, err = DemoModel.Delete(minidal.Object{
 		"id": id,
 	})
 
@@ -120,16 +137,16 @@ func main() {
 		panic(err)
 	}
 
-	result, err := Model.InsertBulk(minidal.Object{
-		"message": modelName + " bulk inserted!",
+	result, err := DemoModel.InsertBulk(minidal.Object{
+		"message": tablename + " bulk inserted!",
 	}, minidal.Object{
-		"message": modelName + " also bulk inserted!",
+		"message": tablename + " also bulk inserted!",
 	})
 
 	fmt.Printf("BulkInsert: %v\n", result)
 	id = result["LastInsertId"].(int64)
 
-	rows, err = Model.Update(minidal.Object{
+	rows, err = DemoModel.Update(minidal.Object{
 		"id": result["LastInsertId"].(int64),
 	}, minidal.Object{
 		"enabled": 0,
@@ -139,10 +156,10 @@ func main() {
 		panic(err)
 	}
 
-	models, err := Model.Find(minidal.Object{
+	models, err := DemoModel.Find(minidal.Object{
 		"enabled": 1,
 		"id":      3,
-	}, minidal.Object{"id": minidal.DESC}, true)
+	}, minidal.Object{"id": minidal.DESC}, minidal.OR)
 
 	if err != nil {
 		panic(err)
@@ -150,11 +167,21 @@ func main() {
 
 	fmt.Printf("Find Models: %+v\n", models)
 
-	rs, err = db.Query(`
+	rs, err := db.Query(`
 	SELECT * FROM demo WHERE id = ?
 	`, []any{2})
 
-	fmt.Printf("selected id 2: %s\n", strconv.Itoa(int(rs[0]["id"].(int64))))
+	if err != nil {
+		panic(err)
+	}
+
+	model, err = DemoModel.Deserialize(rs...)
+
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("selected id 2: %s\n", strconv.Itoa(int(model.(Demo).Id)))
 
 }
 

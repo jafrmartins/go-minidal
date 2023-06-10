@@ -19,6 +19,13 @@ const (
 	DESC SortOrder = "DESC"
 )
 
+type GlueOperator string
+
+const (
+	AND GlueOperator = "AND"
+	OR  GlueOperator = "OR"
+)
+
 func __where(where Object, values []any, startIndex int) ([]string, []any, int, error) {
 
 	setWhere := make([]string, len(where))

@@ -148,7 +148,7 @@ func main() {
 	models, err := DemoModel.Find(minidal.Object{
 		"enabled": 1,
 		"id":      3,
-	}, minidal.Object{"id": minidal.DESC}, true)
+	}, minidal.Object{"id": minidal.DESC}, minidal.OR)
 
 	if err != nil {
 		panic(err)

@@ -93,12 +93,12 @@ func (m Model) InsertBulk(data ...Object) (Object, error) {
 
 func (m Model) Update(where Object, data Object, or ...bool) (int64, error) {
 
-	glue := "AND"
+	glue := AND
 	if len(or) > 0 && or[0] {
-		glue = "OR"
+		glue = OR
 	}
 
-	query, values, err := __update(m.tablename, glue, where, data)
+	query, values, err := __update(m.tablename, string(glue), where, data)
 	if err != nil {
 		panic("could not initialize Update query")
 	}
@@ -113,12 +113,12 @@ func (m Model) Update(where Object, data Object, or ...bool) (int64, error) {
 }
 
 func (m Model) Delete(where Object, or ...bool) (int64, error) {
-	glue := "AND"
+	glue := AND
 	if len(or) > 0 && or[0] {
-		glue = "OR"
+		glue = OR
 	}
 
-	query, values, err := __delete(m.tablename, glue, where)
+	query, values, err := __delete(m.tablename, string(glue), where)
 	if err != nil {
 		panic("could not initialize Delete query")
 	}
@@ -134,12 +134,12 @@ func (m Model) Delete(where Object, or ...bool) (int64, error) {
 
 func (m Model) First(where Object, or ...bool) (any, error) {
 
-	glue := "AND"
+	glue := AND
 	if len(or) > 0 && or[0] {
-		glue = "OR"
+		glue = OR
 	}
 
-	query, values, err := __first(m.tablename, glue, where)
+	query, values, err := __first(m.tablename, string(glue), where)
 	if err != nil {
 		panic("could not initialize First query")
 	}
@@ -170,19 +170,19 @@ func (m Model) Find(args ...any) (interface{}, error) {
 		"id": DESC,
 	}
 
-	glue := "AND"
+	glue := AND
 	if len(args) >= 1 {
 		w = args[0].(Object)
 		if len(args) >= 2 {
 			ob = args[1].(Object)
 			if len(args) >= 3 && args[2] == true {
-				glue = "OR"
+				glue = OR
 			}
 		}
 
 	}
 
-	query, values, err := __find(m.tablename, glue, w, ob)
+	query, values, err := __find(m.tablename, string(glue), w, ob)
 
 	if err != nil {
 		panic("could not initialize Find query")
